@@ -92,13 +92,13 @@ public final class Pool extends Base {
     }
 
     @UiThread
-    protected void pop(Action action, Object result) {
-        LOG("Removing action %d (%s) from pool.", action.index(), action.id());
+    protected void pop(Action action) {
+        LOG("Removing action %d (%s) from pool.", action.getPoolIndex(), action.id());
         action.setPool(null, -1);
         mQueue.remove(action);
         if (mResult == null)
             mResult = new Result();
-        mResult.put(action, result);
+        mResult.put(action);
 
         if (mQueue.isEmpty()) {
             LOG("All actions are done executing.");
@@ -107,7 +107,7 @@ public final class Pool extends Base {
             Async.pop(this);
         } else if (mMode == MODE_SERIES) {
             final Action nextAction = mQueue.get(0);
-            LOG("Executing next action in the series: %d", nextAction.index());
+            LOG("Executing next action in the series: %d", nextAction.getPoolIndex());
             nextAction.execute();
         }
     }
@@ -124,7 +124,7 @@ public final class Pool extends Base {
             mSize++;
             action.setPool(this, mSize - 1);
             mQueue.add(action);
-            LOG("Pushing action %d (%s) into the Pool.", action.index(), action.id());
+            LOG("Pushing action %d (%s) into the Pool.", action.getPoolIndex(), action.id());
 
             if (mExecuted) {
                 if (mMode == MODE_SERIES) {

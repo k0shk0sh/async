@@ -1,11 +1,7 @@
 package com.afollestad.async;
 
 import android.os.Handler;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.UiThread;
-import android.support.annotation.WorkerThread;
+import android.support.annotation.*;
 
 /**
  * @author Aidan Follestad (afollestad)
@@ -14,17 +10,19 @@ public abstract class Action<RT> extends Base {
 
     private Handler mHandler;
     private Pool mPool;
-    private int mSelfIndex;
-    private boolean mExecuted;
+    private int mPoolIndex;
+    private boolean mExecuting;
     private boolean mCancelled;
     private Thread mThread;
+    private boolean mDone;
+    private RT mResult;
 
     public Action() {
     }
 
     @IntRange(from = 0, to = Integer.MAX_VALUE)
-    public final int index() {
-        return mSelfIndex;
+    public final int getPoolIndex() {
+        return mPoolIndex;
     }
 
     @NonNull
@@ -41,46 +39,59 @@ public abstract class Action<RT> extends Base {
 
     @UiThread
     public final void execute() {
-        if (mExecuted)
+        if (mExecuting)
             throw new IllegalStateException("This action has already been executed.");
-        mExecuted = true;
+        mExecuting = true;
+        mDone = false;
+        mCancelled = false;
+
         if (mPool == null && mHandler == null) {
             LOG(Action.class, "Pool is null, creating action-level handler.");
             mHandler = new Handler();
         }
-        LOG(Action.class, "Executing action %d (%s)...", index(), id());
+        LOG(Action.class, "Executing action %d (%s)...", getPoolIndex(), id());
+
         mThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                final RT result;
                 try {
-                    result = Action.this.run();
+                    mResult = Action.this.run();
                 } catch (InterruptedException e) {
-                    LOG(Action.class, "Action %d (%s) was cancelled.", index(), id());
+                    LOG(Action.class, "Action %d (%s) was cancelled.", getPoolIndex(), id());
                     mCancelled = true;
-                    mExecuted = false;
-                    return;
                 }
 
-                mExecuted = false;
+                mExecuting = false;
                 if (isCancelled()) {
-                    LOG(Action.class, "Action %d (%s) was cancelled.", index(), id());
+                    LOG(Action.class, "Action %d (%s) was cancelled.", getPoolIndex(), id());
                     return;
                 }
                 post(new Runnable() {
                     @Override
                     public void run() {
-                        LOG(Action.class, "Action %d (%s) finished executing!", index(), id());
-                        done(result);
-                        if (mPool != null) {
-                            mThread = null;
-                            mPool.pop(Action.this, result);
-                        }
+                        LOG(Action.class, "Action %d (%s) finished executing!", getPoolIndex(), id());
+                        mDone = true;
+                        done(mResult);
+                        mThread = null;
+                        if (mPool != null)
+                            mPool.pop(Action.this);
                     }
                 });
             }
         });
         mThread.start();
+    }
+
+    public final void waitForExecution() {
+        if (!isExecuting())
+            throw new IllegalStateException(String.format("Action %d (%s) is not currently executing.", getPoolIndex(), id()));
+        while (isExecuting() && !isCancelled()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
     }
 
     @WorkerThread
@@ -99,24 +110,37 @@ public abstract class Action<RT> extends Base {
         mThread = null;
     }
 
+    public final boolean isExecuting() {
+        return mExecuting;
+    }
+
     public final boolean isCancelled() {
         return mCancelled;
     }
 
     public final boolean isDone() {
-        return mThread == null || isCancelled();
+        return mDone;
     }
 
-    protected final void setPool(@Nullable Pool pool, @IntRange(from = -1, to = Integer.MAX_VALUE) int selfIndex) {
-        mSelfIndex = selfIndex;
+    public RT getResult() {
+        return mResult;
+    }
+
+    protected final void setPool(@Nullable Pool pool, @IntRange(from = -1, to = Integer.MAX_VALUE) int poolIndex) {
+        mPoolIndex = poolIndex;
         mCancelled = false;
-        mExecuted = false;
+        mExecuting = false;
         if (pool == null) {
             mPool = null;
             return;
         } else if (mPool != null) {
-            throw new IllegalStateException(String.format("Action %s is aleady in use by another Pool.", id()));
+            throw new IllegalStateException(String.format("Action %s is already in use by another Pool.", id()));
         }
         mPool = pool;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s: %s", id(), mResult);
     }
 }

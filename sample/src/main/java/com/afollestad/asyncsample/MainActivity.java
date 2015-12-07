@@ -19,7 +19,7 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements Done {
 
     @Bind(R.id.log)
     TextView mLog;
@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     protected void done(String result) {
-                        mLog.append(String.format("Action %d (%s) is done! %s\n", index(), id(), result));
+                        mLog.append(String.format("Action %d (%s) is done! %s\n", getPoolIndex(), id(), result));
                     }
                 },
                 new Action<String>() {
@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     protected void done(String result) {
-                        mLog.append(String.format("Action %d (%s) is done! %s\n", index(), id(), result));
+                        mLog.append(String.format("Action %d (%s) is done! %s\n", getPoolIndex(), id(), result));
                     }
                 }
         };
@@ -101,28 +101,22 @@ public class MainActivity extends AppCompatActivity {
     public void onClickExecuteParallel() {
         mLog.setText("");
         mPushAction.setEnabled(true);
-        mPool = Async.parallel(getActions())
-                .done(new Done() {
-                    @Override
-                    public void result(@NonNull Result result) {
-                        mLog.append(String.format("\n%s%s\n", result.get("one"), result.get("two")));
-//                        mPushAction.setEnabled(false);
-                    }
-                });
+        mPool = Async.parallel(getActions()).done(this);
     }
 
     @OnClick(R.id.executeSeries)
     public void onClickExecuteSeries() {
         mLog.setText("");
         mPushAction.setEnabled(true);
-        mPool = Async.series(getActions())
-                .done(new Done() {
-                    @Override
-                    public void result(@NonNull Result result) {
-                        mLog.append(String.format("\n%s%s\n", result.get("one"), result.get("two")));
-//                        mPushAction.setEnabled(false);
-                    }
-                });
+        mPool = Async.series(getActions()).done(this);
+    }
+
+    @Override
+    public void result(@NonNull Result result) {
+        mLog.append(String.format("\n%s%s\n",
+                // Prints out Action.toString(), which includes ID and Result
+                result.get("one"), result.get("two")));
+        mPushAction.setEnabled(false);
     }
 
     @OnClick(R.id.pushAction)

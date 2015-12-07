@@ -1,14 +1,35 @@
 # Async
 
-A library designed to make the organized execution of async processes on Android easy.
+A library designed to make the organized execution of async processes in Java easy.
 
 ---
 
-# Gradle Dependency
+# Table of Contents
+
+1. [Gradle and Maven Dependency](https://github.com/afollestad/async#gradle-and-maven-dependency)
+    1. [Gradle](https://github.com/afollestad/async#gradle)
+    2. [Maven](https://github.com/afollestad/async#maven)
+2. [Actions](https://github.com/afollestad/async#actions)
+    1. [Basic Action](https://github.com/afollestad/async#basic-action)
+    2. [Advanced Action](https://github.com/afollestad/async#advanced-action)
+    3. [Action Execution](https://github.com/afollestad/async#action-execution)
+3. [Pools](https://github.com/afollestad/async#pools)
+    1. [Executing in Series](https://github.com/afollestad/async#executing-in-series)
+    2. [Executing in Parallel](https://github.com/afollestad/async#executing-in-parallel)
+    2. [Receiving Results](https://github.com/afollestad/async#receiving-results)
+    3. [Pushing Actions](https://github.com/afollestad/async#pushing-actions)
+5. [Cancellation](https://github.com/afollestad/async#cancellation)
+    1. [Cancelling One](https://github.com/afollestad/async#cancelling-one)
+    2. [Cancelling Multiple](https://github.com/afollestad/async#cancelling-multiple)
+    3. [Cancelling All](https://github.com/afollestad/async#cancelling-all)
+
+---
+
+# Gradle and Maven Dependency
 
 [![Release](https://img.shields.io/github/release/afollestad/async.svg?label=jitpack)](https://jitpack.io/#afollestad/async)
 
-### Repository
+### Gradle
 
 Add this to your project's root (not your module's) `build.gradle` file:
 
@@ -21,37 +42,44 @@ allprojects {
 }
 ```
 
-### Dependency
-
-Add this to your module's (e.g. "app") `build.gradle` file:
+Add this to your module's (e.g. "app") `build.gradle` file (the version should match the 
+one displayed on the badge above):
 
 ```Gradle
 dependencies {
     ...
-    compile 'com.github.afollestad:async:0.1.0'
+    compile 'com.github.afollestad:async:x.y.z'
 }
+```
+
+### Maven
+
+Add the repository:
+
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+```
+
+Add the dependency (the version should match the one displayed on the badge above):
+
+```xml
+<dependency>
+    <groupId>com.github.afollestad</groupId>
+    <artifactId>async</artifactId>
+    <version>x.y.z</version>
+</dependency>
 ```
 
 ---
 
-# Table of Contents
-
-1. [Gradle Dependency](https://github.com/afollestad/async#gradle-dependency)
-    1. [Repository](https://github.com/afollestad/async#repository)
-    2. [Dependency](https://github.com/afollestad/async#dependency)
-2. [Actions](https://github.com/afollestad/async#actions)
-3. [Execution](https://github.com/afollestad/async#execution)
-    1. [Singular](https://github.com/afollestad/async#singular)
-    2. [Multiple](https://github.com/afollestad/async#multiple)
-    3. [Pushing Actions](https://github.com/afollestad/async#pushing-actions)
-4. [Cancellation](https://github.com/afollestad/async#cancellation)
-    1. [Singular](https://github.com/afollestad/async#singular-1)
-    2. [Multiple](https://github.com/afollestad/async#multiple-1)
-    3. [All](https://github.com/afollestad/async#all)
-
----
-
 # Actions
+
+### Basic Action
 
 An action is a single process. At a bare minimum, they look like this:
 
@@ -75,13 +103,9 @@ Action action = new Action() {
 
 The value returned in `id()` should be unique for all actions in your app. It'll be useful later.
 
----
+### Advanced Action
 
-# Execution
-
-### Singular
-
-Executing a single action is easy:
+Here's a more advanced example:
 
 ```java
 Action<String> action = new Action<String>() {
@@ -104,61 +128,66 @@ Action<String> action = new Action<String>() {
         // Back on the UI thread. Use the result.
     }
 };
+```
 
+Notice that `String` is passed as a generic parameter to `Action`. This specifies the return type for `run()` which, 
+gets passed to `done(result)`.
+
+### Action Execution
+
+Executing an `Action` runs its code on a background thread.
+
+```java
+Action<Integer> action = // ...
 action.execute();
 ```
 
-The `run()` method is called on a background thread, the `done(result)` method is called back on the UI thread. 
-  **When an action is executed, it can't be executed again until it's done.**
+You can receive the result in two ways, either through the optional `done()` method that can be 
+overridden in your `Action`. Or you can wait for the result like this:
 
-### Multiple
+```java
+Action<String> action = // ...
+action.execute();
+action.waitForExecution();
+String result = action.getResult();
+```
 
-Async makes executing multiple actions in order or at the same time easy.
+The downside to using `waitForExecution()` is that it will block the calling thread until the 
+`Action` is done executing. When you override `done()` inside the `Action`, it will be called 
+automatically when the background process is done.
+
+---
+
+# Pools
+
+Async makes executing multiple actions in order **or** at the same time easy.
 
 Take these two actions:
 
 ```java
-Action<String> one = new Action<String>() {
-    @NonNull
-    @Override
-    public String id() {
-        return "one";
-    }
-
-    @Nullable
-    @Override
-    protected String run() throws InterruptedException {
-        return "Hello, ";
-    }
-};
-Action<String> two = new Action<String>() {
-    @NonNull
-    @Override
-    public String id() {
-        return "two";
-    }
-
-    @Nullable
-    @Override
-    protected String run() throws InterruptedException {
-        return "how are you?";
-    }
-};
+Action one = // ...
+Action two = // ...
 ```
 
-You can execute them as a series (one at a time):
+### Executing in Series
+
+Executing actions as a series means they will be executed one at a time.
 
 ```java
 Async.series(one, two)
 ```
 
-Or parallel to each other (at the same time):
+### Executing in Parallel
+
+Executing actions in parallel means they will be executed at the same time.
 
 ```java
 Async.parallel(one, two);
 ```
 
-You can even receive a callback when all actions are done. This is where the IDs of your actions
+### Receiving Results
+
+You can receive a callback when all actions are done. This is where the IDs of your actions
 come in useful:
 
 ```java
@@ -166,9 +195,19 @@ Async.parallel(one, two);
     .done(new Done() {
         @Override
         public void result(@NonNull Result result) {
-            // All actions are done executing, use the results.
-            String resultOne = (String) result.get("one"); // "one" is an id() value
-            String resultTwo = (String) result.get("two"); // "two" is an id() value
+        
+            // The parameter passed to get(String) must match an ID of an executed action
+            Action<?> one = result.get("action-one-id");
+            if (one != null) {
+                // Do something with the result
+                Object result1 = one.getResult();
+            }
+            
+            Action<?> two = result.get("action-two-id");
+            if (one != null) {
+                // Do something with the result
+                Object result2 = two.getResult();
+            }
         }
     });
 ```
@@ -190,23 +229,24 @@ Pool pool = Async.series(one, two);
 pool.push(three, four);
 ```
 
-This would start by executing action one and two as a series (one at a time). Three and four get pushed
-into the Pool after execution starts, and get executed in order after one and two are done.
+This would start by executing action `one` and `two` as a series (one at a time). `three` and 
+`four` get pushed into the `Pool` after execution starts, and get executed in order after one 
+and two are done.
 
-In parallel mode, three and four would immediately get executed, but the `done` callback for all 4 actions
-would get called at the same time as long as one and two didn't finish before three and four were pushed.
-If one and two finished before three and four were pushed, the done callback would be called a second time for
-three and four.
+In parallel mode, three and four would immediately get executed, but the `done` callback for all 
+4 actions would get called at the same time as long as one and two didn't finish before three and 
+four were pushed. If one and two finished before three and four were pushed, the done callback 
+would be called a second time for three and four.
 
 ---
 
 # Cancellation
 
-### Singular
+### Cancelling One
 
-Try to split up your action processing into multiple parts if possible. Between each part, check if the
- action has been cancelled yet using `isCancelled()`. Immediately returning null in that case will allow
- actions to stop executing as soon as possible when they are cancelled.
+Try to split up your action processing into multiple parts if possible. Between each part, 
+check if the action has been cancelled yet using `isCancelled()`. Immediately returning null 
+in that case will allow actions to stop executing as soon as possible when they are cancelled.
 
 ```java
 Action<String> action = new Action<String>() {
@@ -237,43 +277,17 @@ action.execute();
 action.cancel();
 ```
 
-### Multiple
+### Cancelling Multiple
 
 ```java
-Action<String> one = new Action<String>() {
-    @NonNull
-    @Override
-    public String id() {
-        return "one";
-    }
-
-    @Nullable
-    @Override
-    protected String run() throws InterruptedException {
-        return "Hello, ";
-    }
-};
-Action<String> two = new Action<String>() {
-    @NonNull
-    @Override
-    public String id() {
-        return "two";
-    }
-
-    @Nullable
-    @Override
-    protected String run() throws InterruptedException {
-        return "how are you?";
-    }
-};
+Action one = // ...
+Action two = // ...
 
 Pool pool = Async.parallel(one, two);
     .done(new Done() {
         @Override
         public void result(@NonNull Result result) {
-            // All actions are done executing, they were NOT cancelled. Use the results.
-            String resultOne = (String) result.get("one"); // "one" is an id() value
-            String resultTwo = (String) result.get("two"); // "two" is an id() value
+            // Use the result, see the 'Receiving Results' section above
         }
     });
     
@@ -281,7 +295,7 @@ Pool pool = Async.parallel(one, two);
 pool.cancel();
 ```
 
-### All
+### Cancelling All
 
 You can cancel all running pools:
 
@@ -289,4 +303,5 @@ You can cancel all running pools:
 Async.cancelAll();
 ```
 
-It's recommend you always call this every time your app goes into the background, to prevent memory leaks.
+It's recommend you always call this every time your app goes into the background, to prevent 
+memory leaks.
