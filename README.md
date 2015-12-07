@@ -43,6 +43,7 @@ dependencies {
 3. [Execution](https://github.com/afollestad/async#execution)
     1. [Singular](https://github.com/afollestad/async#singular)
     2. [Multiple](https://github.com/afollestad/async#multiple)
+    3. [Pushing Actions](https://github.com/afollestad/async#pushing-actions)
 4. [Cancellation](https://github.com/afollestad/async#cancellation)
     1. [Singular](https://github.com/afollestad/async#singular-1)
     2. [Multiple](https://github.com/afollestad/async#multiple-1)
@@ -171,6 +172,31 @@ Async.parallel(one, two);
         }
     });
 ```
+
+### Pushing Actions
+
+Pools allow you to continue to push actions to be executed.
+
+For an example:
+
+```java
+Action one = //...
+Action two = //...
+Action three = //...
+Action four = //...
+
+Pool pool = Async.series(one, two);
+
+pool.push(three, four);
+```
+
+This would start by executing action one and two as a series (one at a time). Three and four get pushed
+into the Pool after execution starts, and get executed in order after one and two are done.
+
+In parallel mode, three and four would immediately get executed, but the `done` callback for all 4 actions
+would get called at the same time as long as one and two didn't finish before three and four were pushed.
+If one and two finished before three and four were pushed, the done callback would be called a second time for
+three and four.
 
 ---
 

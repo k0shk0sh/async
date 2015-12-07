@@ -14,7 +14,7 @@ import java.util.Collections;
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class Pool extends Base {
+public final class Pool extends Base {
 
     @IntDef({MODE_PARALLEL, MODE_SERIES})
     @Retention(RetentionPolicy.SOURCE)
@@ -32,6 +32,8 @@ public class Pool extends Base {
     private final ArrayList<Action> mQueue;
     private Done mDone;
     private Result mResult;
+    private boolean mExecuted = false;
+    private int mSize;
 
     @UiThread
     protected Pool(@NonNull Action[] actions, @Mode int mode) {
@@ -44,11 +46,9 @@ public class Pool extends Base {
 
     private void prepare() {
         synchronized (LOCK) {
-            for (int i = 0; i < mQueue.size(); i++) {
+            for (int i = 0; i < mQueue.size(); i++)
                 mQueue.get(i).setPool(this, i);
-                if (mMode == MODE_SERIES && i < mQueue.size() - 1)
-                    mQueue.get(i).mNext = mQueue.get(i + 1);
-            }
+            mSize = mQueue.size();
             LOG("Prepared %d actions for execution...", mQueue.size());
         }
     }
@@ -56,16 +56,19 @@ public class Pool extends Base {
     @UiThread
     protected Pool execute() {
         synchronized (LOCK) {
-            if (mQueue.size() == 0)
-                throw new IllegalStateException("This Pool has already completed execution, or it's been cancelled.");
+            if (mExecuted || mQueue.size() == 0)
+                throw new IllegalStateException("This Pool has already been executed or cancelled.");
+            mExecuted = true;
             mResult = new Result();
             if (mMode == MODE_SERIES) {
                 LOG("Executing actions in SERIES mode...");
                 mQueue.get(0).execute();
-            } else {
+            } else if (mMode == MODE_PARALLEL) {
                 LOG("Executing actions in PARALLEL mode...");
                 for (Action a : mQueue)
                     a.execute();
+            } else {
+                throw new IllegalStateException("Unknown mode: " + mMode);
             }
             return this;
         }
@@ -93,16 +96,46 @@ public class Pool extends Base {
         LOG("Removing action %d (%s) from pool.", action.index(), action.id());
         action.setPool(null, -1);
         mQueue.remove(action);
+        if (mResult == null)
+            mResult = new Result();
         mResult.put(action, result);
 
         if (mQueue.isEmpty()) {
-            LOG("Queue size is empty, assuming all actions are done executing.");
+            LOG("All actions are done executing.");
             if (mDone != null) mDone.result(mResult);
             mResult = null;
             Async.pop(this);
-        } else if (action.mNext != null) {
-            LOG("Executing next action in the series: %d", action.mNext.index());
-            action.mNext.execute();
+        } else if (mMode == MODE_SERIES) {
+            final Action nextAction = mQueue.get(0);
+            LOG("Executing next action in the series: %d", nextAction.index());
+            nextAction.execute();
+        }
+    }
+
+    @UiThread
+    public void push(@NonNull Action... actions) {
+        for (Action a : actions)
+            push(a);
+    }
+
+    @UiThread
+    public void push(@NonNull Action action) {
+        synchronized (LOCK) {
+            mSize++;
+            action.setPool(this, mSize - 1);
+            mQueue.add(action);
+            LOG("Pushing action %d (%s) into the Pool.", action.index(), action.id());
+
+            if (mExecuted) {
+                if (mMode == MODE_SERIES) {
+                    if (mQueue.isEmpty())
+                        action.execute();
+                } else if (mMode == MODE_PARALLEL) {
+                    action.execute();
+                } else {
+                    throw new IllegalStateException("Unknown mode: " + mMode);
+                }
+            }
         }
     }
 

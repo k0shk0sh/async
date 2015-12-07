@@ -1,5 +1,9 @@
 <resources>
 
     <string name="app_name">Async Sample</string>
+    <string name="push_action">Push Action</string>
+    <string name="execute_series">Execute Series</string>
+    <string name="execute_parallel">Execute Parallel</string>
+    <string name="cancel_all">Cancel All</string>
 
 </resources>

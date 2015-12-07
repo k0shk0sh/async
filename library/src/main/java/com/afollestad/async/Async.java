@@ -8,7 +8,7 @@ import java.util.ArrayList;
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class Async extends Base {
+public final class Async extends Base {
 
     private static Async mInstance;
     private static final Object LOCK = new Object();

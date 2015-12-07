@@ -17,7 +17,6 @@ public abstract class Action<RT> extends Base {
     private int mSelfIndex;
     private boolean mExecuted;
     private boolean mCancelled;
-    protected Action mNext;
     private Thread mThread;
 
     public Action() {
@@ -73,7 +72,10 @@ public abstract class Action<RT> extends Base {
                     public void run() {
                         LOG(Action.class, "Action %d (%s) finished executing!", index(), id());
                         done(result);
-                        if (mPool != null) mPool.pop(Action.this, result);
+                        if (mPool != null) {
+                            mThread = null;
+                            mPool.pop(Action.this, result);
+                        }
                     }
                 });
             }
@@ -92,11 +94,17 @@ public abstract class Action<RT> extends Base {
 
     public final void cancel() {
         mCancelled = true;
-        mThread.interrupt();
+        if (mThread != null)
+            mThread.interrupt();
+        mThread = null;
     }
 
     public final boolean isCancelled() {
         return mCancelled;
+    }
+
+    public final boolean isDone() {
+        return mThread == null || isCancelled();
     }
 
     protected final void setPool(@Nullable Pool pool, @IntRange(from = -1, to = Integer.MAX_VALUE) int selfIndex) {

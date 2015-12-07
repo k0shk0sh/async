@@ -1,24 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="@dimen/content_inset">
+        android:orientation="vertical"
+        android:weightSum="3">
 
-        <TextView
-            android:id="@+id/log"
+        <Button
+            android:id="@+id/executeSeries"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-light"
-            android:textColor="?android:textColorPrimary"
-            android:textSize="@dimen/regular_text_size"
-            tools:ignore="UnusedAttribute"
-            tools:text="Example\nLog message" />
+            android:layout_height="@dimen/button_height"
+            android:layout_weight="1"
+            android:text="@string/execute_series" />
+
+        <Button
+            android:id="@+id/executeParallel"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:layout_weight="1"
+            android:text="@string/execute_parallel" />
+
+        <Button
+            android:id="@+id/pushAction"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:layout_weight="1"
+            android:text="@string/push_action" />
+
+        <Button
+            android:id="@+id/cancelAll"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:layout_weight="1"
+            android:text="@string/cancel_all" />
 
     </LinearLayout>
 
-</ScrollView>
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/content_inset">
+
+            <TextView
+                android:id="@+id/log"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-light"
+                android:textColor="?android:textColorPrimary"
+                android:textSize="@dimen/regular_text_size"
+                tools:ignore="UnusedAttribute"
+                tools:text="Example\nLog message" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

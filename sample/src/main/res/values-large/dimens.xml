@@ -2,5 +2,6 @@
 
     <dimen name="regular_text_size">22sp</dimen>
     <dimen name="content_inset">24dp</dimen>
+    <dimen name="button_height">56dp</dimen>
 
 </resources>
