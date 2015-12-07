@@ -25,7 +25,7 @@ allprojects {
 
 Add this to your module's (e.g. "app") `build.gradle` file:
 
-```
+```Gradle
 dependencies {
     ...
     compile 'com.github.afollestad:async:0.1.0'
