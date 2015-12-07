@@ -1,0 +1,6 @@
+<resources>
+
+    <dimen name="regular_text_size">18sp</dimen>
+    <dimen name="content_inset">16dp</dimen>
+
+</resources>
