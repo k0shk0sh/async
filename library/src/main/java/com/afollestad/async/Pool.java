@@ -53,6 +53,28 @@ public final class Pool extends Base {
         }
     }
 
+    public boolean isExecuting() {
+        synchronized (LOCK) {
+            return mQueue != null && !mQueue.isEmpty();
+        }
+    }
+
+    public void waitForExecution() {
+        if (!isExecuting())
+            throw new IllegalStateException("Pool is not currently executing.");
+        while (isExecuting()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
+    }
+
+    public Result getResult() {
+        return mResult;
+    }
+
     @UiThread
     protected Pool execute() {
         synchronized (LOCK) {
@@ -81,7 +103,6 @@ public final class Pool extends Base {
             for (Action a : mQueue)
                 a.cancel();
             mQueue.clear();
-            mResult = null;
             Async.pop(this);
         }
     }
@@ -103,7 +124,6 @@ public final class Pool extends Base {
         if (mQueue.isEmpty()) {
             LOG("All actions are done executing.");
             if (mDone != null) mDone.result(mResult);
-            mResult = null;
             Async.pop(this);
         } else if (mMode == MODE_SERIES) {
             final Action nextAction = mQueue.get(0);

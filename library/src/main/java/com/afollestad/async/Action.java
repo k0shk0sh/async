@@ -91,15 +91,13 @@ public abstract class Action<RT> extends Base {
     }
 
     public final void waitForExecution() {
-        synchronized (LOCK) {
-            if (!isExecuting())
-                throw new IllegalStateException(String.format("Action %d (%s) is not currently executing.", getPoolIndex(), id()));
-            while (isExecuting() && !isCancelled()) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    break;
-                }
+        if (!isExecuting())
+            throw new IllegalStateException(String.format("Action %d (%s) is not currently executing.", getPoolIndex(), id()));
+        while (isExecuting() && !isCancelled()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                break;
             }
         }
     }
@@ -125,11 +123,15 @@ public abstract class Action<RT> extends Base {
     }
 
     public final boolean isExecuting() {
-        return mExecuting;
+        synchronized (LOCK) {
+            return mExecuting;
+        }
     }
 
     public final boolean isCancelled() {
-        return mCancelled;
+        synchronized (LOCK) {
+            return mCancelled;
+        }
     }
 
     public final boolean isDone() {

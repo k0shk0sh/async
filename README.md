@@ -209,8 +209,27 @@ Async.parallel(one, two);
                 // Do something with the result
                 Object result2 = two.getResult();
             }
+            
+            // You can also iterate the Result object
+            for (Action<?> action : result) {
+                Object anotherResult = action.getResult();
+            }
         }
     });
+```
+
+You can also receive results synchronously like you can with single actions, but remember that this 
+blocks the calling thread:
+
+```java
+Action one = //...
+Action two = //...
+
+Pool pool = Async.series(one, two);
+pool.waitForExecution();
+
+Result result = pool.getResult();
+// Use result object like shown in the callback for the async variant above
 ```
 
 ### Pushing Actions
