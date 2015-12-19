@@ -29,6 +29,7 @@ A library designed to make the organized execution of async processes in Java ea
 
 [![Release](https://img.shields.io/github/release/afollestad/async.svg?label=jitpack)](https://jitpack.io/#afollestad/async)
 [![Build Status](https://travis-ci.org/afollestad/async.svg)](https://travis-ci.org/afollestad/async)
+[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg?style=flat-square)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 ### Gradle
 
