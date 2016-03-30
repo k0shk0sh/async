@@ -11,10 +11,10 @@ android {
         minSdkVersion 14
         targetSdkVersion 23
         versionCode 1
-        versionName "0.2.1"
+        versionName "0.2.2"
     }
 }
 
 dependencies {
-    compile 'com.android.support:support-annotations:23.1.1'
+    compile 'com.android.support:support-annotations:23.2.1'
 }
