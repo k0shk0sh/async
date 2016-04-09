@@ -50,7 +50,7 @@ one displayed on the badge above):
 ```Gradle
 dependencies {
     ...
-    compile 'com.github.afollestad:async:0.2.2'
+    compile 'com.github.afollestad:async:0.2.3'
 }
 ```
 
