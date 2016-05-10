@@ -6,9 +6,7 @@ A library designed to make the organized execution of async processes in Java ea
 
 # Table of Contents
 
-1. [Gradle and Maven Dependency](https://github.com/afollestad/async#gradle-and-maven-dependency)
-    1. [Gradle](https://github.com/afollestad/async#gradle)
-    2. [Maven](https://github.com/afollestad/async#maven)
+1. [Gradle Dependency](https://github.com/afollestad/async#gradle-dependency)
 2. [Actions](https://github.com/afollestad/async#actions)
     1. [Basic Action](https://github.com/afollestad/async#basic-action)
     2. [Advanced Action](https://github.com/afollestad/async#advanced-action)
@@ -25,24 +23,16 @@ A library designed to make the organized execution of async processes in Java ea
 
 ---
 
-# Gradle and Maven Dependency
+# Gradle Dependency
 
-[![Release](https://jitpack.io/v/afollestad/async.svg)](https://jitpack.io/#afollestad/async)
+[ ![jCenter](https://api.bintray.com/packages/drummer-aidan/maven/async/images/download.svg) ](https://bintray.com/drummer-aidan/maven/async/_latestVersion)
 [![Build Status](https://travis-ci.org/afollestad/async.svg)](https://travis-ci.org/afollestad/async)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg?style=flat-square)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
-### Gradle
+### Dependency
 
-Add this to your project's root (not your module's) `build.gradle` file:
-
-```Gradle
-allprojects {
-    repositories {
-        ...
-        maven { url "https://jitpack.io" }
-    }
-}
-```
+The Gradle dependency is available via [jCenter](https://bintray.com/drummer-aidan/maven/material-camera/view).
+jCenter is the default Maven repository used by Android Studio.
 
 Add this to your module's (e.g. "app") `build.gradle` file (the version should match the 
 one displayed on the badge above):
@@ -50,31 +40,8 @@ one displayed on the badge above):
 ```Gradle
 dependencies {
     ...
-    compile 'com.github.afollestad:async:0.2.3'
+    compile 'com.afollestad:async:0.2.3'
 }
-```
-
-### Maven
-
-Add the repository:
-
-```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-```
-
-Add the dependency (the version should match the one displayed on the badge above):
-
-```xml
-<dependency>
-    <groupId>com.github.afollestad</groupId>
-    <artifactId>async</artifactId>
-    <version>x.y.z</version>
-</dependency>
 ```
 
 ---
